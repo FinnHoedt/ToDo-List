@@ -1,0 +1,1 @@
+{"version":1,"defects":{"App\\Tests\\Controller\\Authentication\\ApiRegistrationControllerTest::testRegisterSuccessfully":7},"times":{"App\\Tests\\Controller\\Authentication\\ApiRegistrationControllerTest::testRegisterSuccessfully":0.151}}
