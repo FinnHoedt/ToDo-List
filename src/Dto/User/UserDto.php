@@ -10,6 +10,7 @@ readonly class UserDto
     public function __construct(
         #[Assert\NotBlank(message: "Email is required")]
         #[Assert\Email(message: 'Please provide a valid email address')]
+        #[Assert\Length(max: 180, maxMessage: "Email is maximum 180 characters")]
         #[AppAssert\UniqueEmail]
         public ?string $email,
 

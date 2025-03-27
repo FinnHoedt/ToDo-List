@@ -14,7 +14,7 @@ final class ApiRegistrationControllerTest extends WebTestCase {
         $client = self::createClient();
 
         $payload = [
-            'email' => 'test@test.com',
+            'email' => 'test2@test.com',
             'password' => 'password',
         ];
 
@@ -94,7 +94,7 @@ final class ApiRegistrationControllerTest extends WebTestCase {
         $client = self::createClient();
 
         $payload = [
-            'email' => 'test@test.com',
+            'email' => 'test2@test.com',
         ];
 
         $options = [
@@ -121,7 +121,7 @@ final class ApiRegistrationControllerTest extends WebTestCase {
         $client = self::createClient();
 
         $payload = [
-            'email' => 'test@test.com',
+            'email' => 'test2@test.com',
             'password' => 'pass',
         ];
 
@@ -148,17 +148,7 @@ final class ApiRegistrationControllerTest extends WebTestCase {
     {
         $client = self::createClient();
 
-        $container = self::getContainer();
-        $userRepository = $container->get(UserRepository::class);
-
-        $alreadyRegisteredEmail = 'test@test.com';
-
-        $alreadyRegisteredUser = new UserDto(
-            $alreadyRegisteredEmail,
-            'password',
-        );
-
-        $userRepository->save($alreadyRegisteredUser);
+        $alreadyRegisteredEmail = 'test0@test.com';
 
         $payload = [
             'email' => $alreadyRegisteredEmail,
