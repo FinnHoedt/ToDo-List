@@ -2,12 +2,11 @@
 
 namespace App\Repository;
 
-use App\Dto\Category\CategoryDto;
+use App\Dto\CategoryDto;
 use App\Entity\Category;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * @extends ServiceEntityRepository<Category>

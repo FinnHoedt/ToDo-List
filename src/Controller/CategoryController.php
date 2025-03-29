@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Dto\Category\CategoryDto;
+use App\Dto\CategoryDto;
 use App\Entity\Category;
 use App\Entity\User;
 use App\Repository\CategoryRepository;
@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Serializer\SerializerInterface;
 
 final class CategoryController extends AbstractController
@@ -31,17 +32,12 @@ final class CategoryController extends AbstractController
     }
 
     #[Route('/api/category', name: 'app_category_store', methods: ['POST'],)]
-    public function store(Request $request,
+    public function store(#[CurrentUser] User $user,
+                          Request $request,
                           ErrorMessageGenerator $errorMessageGenerator,
                           CategoryRepository $categoryRepository,
                           SerializerInterface $serializer): JsonResponse
     {
-        $user = $this->getUser();
-
-        if(!$user instanceof User){
-            throw new \LogicException('Authenticated user is not an instance of User');
-        }
-
         $jsonContent = $request->getContent();
 
         $categoryDto = $serializer->deserialize($jsonContent, CategoryDto::class, 'json');
@@ -54,40 +50,29 @@ final class CategoryController extends AbstractController
         $category = $categoryRepository->save($categoryDto, $user);
 
         return $this->json([
-            'message' => 'Category updated',
+            'message' => 'Category created.',
             'category' => $category
         ], Response::HTTP_OK, [], ['groups' => ['category:read']]);
     }
 
-    #[Route('/api/category/{id}', name: 'app_category_show', methods: ['GET'])]
-    public function show(Category $category): JsonResponse
+    #[Route('/api/category/{category_id}', name: 'app_category_show', methods: ['GET'])]
+    public function show(#[CurrentUser] User $user, Category $category): JsonResponse
     {
-        $user = $this->getUser();
-
-        if(!$user instanceof User){
-            throw new \LogicException('Authenticated user is not an instance of User');
-        }
-
         if($category->getUser() !== $user){
-            return new JsonResponse(['message' => 'Category does not belong to this user'], Response::HTTP_FORBIDDEN);
+            throw $this->createNotFoundException();
         }
 
         return $this->json($category, Response::HTTP_OK, [], ['groups' => ['category:read']]);
     }
 
-    #[Route('/api/category/{id}', name: 'app_category_edit', methods: ['PATCH'])]
-    public function edit(Request $request,
+    #[Route('/api/category/{category_id}', name: 'app_category_edit', methods: ['PATCH'])]
+    public function edit(#[CurrentUser] User $user,
+                         Request $request,
                          Category $category,
                          ErrorMessageGenerator $errorMessageGenerator,
                          CategoryRepository $categoryRepository,
                          SerializerInterface $serializer): JsonResponse
     {
-        $user = $this->getUser();
-
-        if(!$user instanceof User){
-            throw new \LogicException('Authenticated user is not an instance of User');
-        }
-
         if($category->getUser() !== $user){
             return new JsonResponse(['message' => 'Category does not belong to this user'], Response::HTTP_FORBIDDEN);
         }
@@ -109,17 +94,11 @@ final class CategoryController extends AbstractController
         ], Response::HTTP_OK, [], ['groups' => ['category:read']]);
     }
 
-    #[Route('/api/category/{id}', name: 'app_category_destroy', methods: ['DELETE'])]
-    public function destroy(Category $category, CategoryRepository $categoryRepository): JsonResponse
+    #[Route('/api/category/{category_id}', name: 'app_category_destroy', methods: ['DELETE'])]
+    public function destroy(#[CurrentUser] User $user, Category $category, CategoryRepository $categoryRepository): JsonResponse
     {
-        $user = $this->getUser();
-
-        if(!$user instanceof User){
-            throw new \LogicException('Authenticated user is not an instance of User');
-        }
-
         if($category->getUser() !== $user){
-            return new JsonResponse(['message' => 'Category does not belong to this user'], Response::HTTP_FORBIDDEN);
+            throw $this->createNotFoundException();
         }
 
         $categoryRepository->delete($category);

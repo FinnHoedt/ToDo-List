@@ -3,6 +3,7 @@
 namespace App\DataFixtures;
 
 use App\Entity\Category;
+use App\Entity\Todo;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
@@ -37,6 +38,19 @@ class AppFixtures extends Fixture
 
             $manager->persist($category);
         }
+
+        $category = new Category();
+        $category->setTitle('Category 1');
+        $category->setUser($users[0]);
+
+        $manager->persist($category);
+
+        $todo = new Todo();
+        $todo->setTitle('Hello');
+        $todo->setDescription('This is a long text');
+        $todo->setCategory($category);
+
+        $manager->persist($todo);
 
         $manager->flush();
     }

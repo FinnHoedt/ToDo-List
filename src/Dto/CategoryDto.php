@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Dto\Category;
+namespace App\Dto;
 
-use App\Entity\User;
 use Symfony\Component\Validator\Constraints as Assert;
 
 readonly class CategoryDto
@@ -10,11 +9,12 @@ readonly class CategoryDto
 
     public function __construct(
         #[Assert\NotBlank(message: "Title is required")]
+        #[Assert\Type('string')]
         #[Assert\Length(
             min: 3,
             max: 255,
             minMessage: "Title is minimum 3 characters",
             maxMessage: "Title is maximum 255 characters")]
-        public ?string $title,
+        public mixed $title,
     ){}
 }

@@ -22,15 +22,7 @@ class Category
     private ?string $title = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'category')]
-    private User $user;
-
-    #[ORM\OneToMany(targetEntity: Todo::class, mappedBy: 'category')]
-    private Collection $todos;
-
-    public function __construct()
-    {
-        $this->todos = new ArrayCollection();
-    }
+    private ?User $user = null;
 
     public function getId(): ?int
     {
@@ -54,21 +46,16 @@ class Category
         return $this->user;
     }
 
+    #[Groups(['category:read'])]
+    public function getUserId(): int
+    {
+        return $this->user->getId();
+    }
+
     public function setUser(?User $user): self
     {
         $this->user = $user;
 
         return $this;
-    }
-
-    public function getTodos(): Collection
-    {
-        return $this->todos;
-    }
-
-    #[Groups(['category:read'])]
-    public function getUserId(): int
-    {
-        return $this->user->getId();
     }
 }

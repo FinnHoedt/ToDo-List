@@ -31,9 +31,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Category::class, mappedBy: 'user')]
     private Collection $categories;
 
+    #[ORM\OneToMany(targetEntity: TodoAccess::class, mappedBy: 'user')]
+    private Collection $assignedTodos;
+
     public function __construct()
     {
         $this->categories = new ArrayCollection();
+        $this->assignedTodos = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -96,6 +100,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getCategories(): Collection
     {
         return $this->categories;
+    }
+
+    public function getAssignedTodos(): Collection
+    {
+        return $this->assignedTodos;
     }
 
 

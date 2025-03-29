@@ -2,8 +2,6 @@
 
 namespace App\Tests\Controller\Authentication;
 
-use App\Dto\User\UserDto;
-use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class ApiRegistrationControllerTest extends WebTestCase {

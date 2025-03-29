@@ -3,8 +3,11 @@
 namespace App\Entity;
 
 use App\Repository\TodoRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TodoRepository::class)]
 class Todo
@@ -12,16 +15,29 @@ class Todo
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['todo:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['todo:read'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['todo:read'])]
     private ?string $description = null;
 
-    #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'todo')]
-    private ?Category $category = null;
+    #[ORM\Column(type: Types::BOOLEAN, nullable: false)]
+    #[Groups(['todo:read'])]
+    private ?bool $completed = false;
+
+    #[Groups(['todo:read'])]
+    #[ORM\OneToMany(targetEntity: TodoAccess::class, mappedBy: 'todo')]
+    private Collection $todoAccesses;
+
+    public function __construct()
+    {
+        $this->todoAccesses = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -52,15 +68,20 @@ class Todo
         return $this;
     }
 
-    public function getCategory(): ?Category
+    public function getCompleted(): bool
     {
-        return $this->category;
+        return $this->completed;
     }
 
-    public function setCategory(?Category $category): self
+    public function setCompleted(bool $completed): self
     {
-        $this->category = $category;
+        $this->completed = $completed;
 
         return $this;
+    }
+
+    public function getTodoAccesses(): Collection
+    {
+        return $this->todoAccesses;
     }
 }

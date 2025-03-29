@@ -2,7 +2,8 @@
 
 namespace App\Controller\Authentication;
 
-use App\Dto\User\UserDto;
+use App\Dto\UserDto;
+use App\Repository\UserRepository;
 use App\Service\Controller\ErrorMessageGenerator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -10,7 +11,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
-use App\Repository\UserRepository;
 
 final class ApiRegistrationController extends AbstractController{
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
