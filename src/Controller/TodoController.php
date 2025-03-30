@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Dto\PrioritizationDto;
 use App\Dto\TodoDto;
 use App\Entity\Category;
 use App\Entity\Todo;
@@ -155,7 +156,7 @@ final class TodoController extends AbstractController
         TodoRepository $todoRepository,
         TodoAccessService $todoAccessService): JsonResponse
     {
-        $todoAccessService->ensureUserHasAccess($todo, $user);
+        $todoAccessService->ensureUserIsOwner($todo, $user);
 
         $todoRepository->delete($todo);
 
@@ -175,56 +176,6 @@ final class TodoController extends AbstractController
 
         return $this->json([
             'message' => 'Todo updated',
-            'todo' => $todo
-        ], Response::HTTP_OK, [], ['groups' => ['todo:read', 'todoAccess:read']]);
-    }
-
-    #[Route('/api/todo/{todo_id}/share/{user_id}', name: 'app_todo_share', methods: ['POST'])]
-    public function shareTodo(
-        #[CurrentUser] User $user,
-        #[MapEntity(mapping: ['todo_id' => 'id'])] Todo $todo,
-        #[MapEntity(mapping: ['user_id' => 'id'])] User $userToGetShared,
-        TodoAccessRepository $todoAccessRepository,
-        TodoAccessService $todoAccessService): JsonResponse
-    {
-        $todoAccessService->ensureUserHasAccess($todo, $user);
-
-        $todoAccess = $todoAccessRepository->share($todo, $userToGetShared);
-
-        if($todoAccess === null){
-            return $this->json([
-                'message' => 'Todo is already shared with User',
-                'todo' => $todo
-            ], Response::HTTP_CONFLICT, [], ['groups' => ['todo:read', 'todoAccess:read']]);
-        }
-
-        return $this->json([
-            'message' => 'Todo shared',
-            'todo' => $todo
-        ], Response::HTTP_OK, [], ['groups' => ['todo:read', 'todoAccess:read']]);
-    }
-
-    #[Route('/api/todo/{todo_id}/revoke/{user_id}', name: 'app_todo_unshare', methods: ['POST'])]
-    public function revokeTodo(
-        #[CurrentUser] User $user,
-        #[MapEntity(mapping: ['todo_id' => 'id'])] Todo $todo,
-        #[MapEntity(mapping: ['user_id' => 'id'])] User $userToGetRevoked,
-        TodoAccessRepository $todoAccessRepository,
-        TodoAccessService $todoAccessService): JsonResponse
-    {
-        $todoAccessService->ensureUserHasAccess($todo, $user);
-
-        $successful = $todoAccessRepository->revoke($todo, $userToGetRevoked);
-
-        if(!$successful){
-            return $this->json([
-                'message' => 'Todo is not shared with user',
-                'todo' => $todo
-            ], Response::HTTP_CONFLICT, [], ['groups' => ['todo:read', 'todoAccess:read']]);
-        }
-
-        return $this->json([
-            'message' => 'Todo revoked',
             'todo' => $todo
         ], Response::HTTP_OK, [], ['groups' => ['todo:read', 'todoAccess:read']]);
     }

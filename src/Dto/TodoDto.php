@@ -3,9 +3,7 @@
 
 namespace App\Dto;
 
-use App\Entity\Category;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Validator as AppAssert;
 
 class TodoDto
 {

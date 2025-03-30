@@ -71,7 +71,6 @@ class TodoAccess
         return $this->todo;
     }
 
-    #[Groups(['todoAccess:read'])]
     public function getTodoId(): ?int
     {
         return $this->todo->getId();

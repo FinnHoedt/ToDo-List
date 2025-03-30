@@ -13,7 +13,6 @@ final class CategoryIdExistsForUserValidator extends ConstraintValidator
     public function __construct(private readonly Security $security, private readonly CategoryRepository $categoryRepository)
     {}
 
-
     public function validate(mixed $value, Constraint $constraint): void
     {
         /* @var CategoryIdExistsForUser $constraint */

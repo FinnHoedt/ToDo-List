@@ -18,6 +18,6 @@
 ###< lexik/jwt-authentication-bundle ###
 
 ###> symfony/phpunit-bridge ###
-.phpunit.result.cache
 /phpunit.xml
+.phpunit.cache
 ###< symfony/phpunit-bridge ###
