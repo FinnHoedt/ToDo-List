@@ -33,7 +33,7 @@ class TodoAccess
     private ?User $assignee = null;
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'todoAccess')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     private ?Category $category = null;
 
 
@@ -110,7 +110,7 @@ class TodoAccess
     #[Groups(['todoAccess:read'])]
     public function getCategoryId(): ?int
     {
-        return $this->category->getId();
+        return $this->category?->getId();
     }
 
     public function setCategory(?Category $category): self

@@ -7,6 +7,7 @@ use App\Entity\Category;
 use App\Entity\User;
 use App\Repository\CategoryRepository;
 use App\Service\Controller\ErrorMessageGenerator;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,11 +33,12 @@ final class CategoryController extends AbstractController
     }
 
     #[Route('/api/category', name: 'app_category_store', methods: ['POST'],)]
-    public function store(#[CurrentUser] User $user,
-                          Request $request,
-                          ErrorMessageGenerator $errorMessageGenerator,
-                          CategoryRepository $categoryRepository,
-                          SerializerInterface $serializer): JsonResponse
+    public function store(
+        #[CurrentUser] User $user,
+        Request $request,
+        ErrorMessageGenerator $errorMessageGenerator,
+        CategoryRepository $categoryRepository,
+        SerializerInterface $serializer): JsonResponse
     {
         $jsonContent = $request->getContent();
 
@@ -56,7 +58,9 @@ final class CategoryController extends AbstractController
     }
 
     #[Route('/api/category/{category_id}', name: 'app_category_show', methods: ['GET'])]
-    public function show(#[CurrentUser] User $user, Category $category): JsonResponse
+    public function show(
+        #[CurrentUser] User $user,
+        #[MapEntity(mapping: ['category_id' => 'id'])] Category $category): JsonResponse
     {
         if($category->getUser() !== $user){
             throw $this->createNotFoundException();
@@ -66,12 +70,13 @@ final class CategoryController extends AbstractController
     }
 
     #[Route('/api/category/{category_id}', name: 'app_category_edit', methods: ['PATCH'])]
-    public function edit(#[CurrentUser] User $user,
-                         Request $request,
-                         Category $category,
-                         ErrorMessageGenerator $errorMessageGenerator,
-                         CategoryRepository $categoryRepository,
-                         SerializerInterface $serializer): JsonResponse
+    public function edit(
+        #[CurrentUser] User $user,
+        Request $request,
+        #[MapEntity(mapping: ['category_id' => 'id'])] Category $category,
+        ErrorMessageGenerator $errorMessageGenerator,
+        CategoryRepository $categoryRepository,
+        SerializerInterface $serializer): JsonResponse
     {
         if($category->getUser() !== $user){
             return new JsonResponse(['message' => 'Category does not belong to this user'], Response::HTTP_FORBIDDEN);
@@ -95,7 +100,10 @@ final class CategoryController extends AbstractController
     }
 
     #[Route('/api/category/{category_id}', name: 'app_category_destroy', methods: ['DELETE'])]
-    public function destroy(#[CurrentUser] User $user, Category $category, CategoryRepository $categoryRepository): JsonResponse
+    public function destroy(
+        #[CurrentUser] User $user,
+        #[MapEntity(mapping: ['category_id' => 'id'])] Category $category,
+        CategoryRepository $categoryRepository): JsonResponse
     {
         if($category->getUser() !== $user){
             throw $this->createNotFoundException();

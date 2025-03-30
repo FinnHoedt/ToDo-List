@@ -19,7 +19,7 @@ class TodoAccessRepository extends ServiceEntityRepository
         parent::__construct($registry, TodoAccess::class);
     }
 
-    public function save(Todo $todo, User $user, Category $category): TodoAccess
+    public function save(Todo $todo, User $user, ?Category $category): TodoAccess
     {
         $todoAccess = new TodoAccess();
 
@@ -34,10 +34,45 @@ class TodoAccessRepository extends ServiceEntityRepository
         return $todoAccess;
     }
 
-    public function doesUserHaveAccessToTodo(Todo $todo, User $user): bool
+    public function share(Todo $todo, User $userToGetShared): ?TodoAccess
     {
-        return (bool) $this->createQueryBuilder('ta')
-            ->leftJoin('t.todo', 't')
+        if($this->getTodoAccessOfTodoForUser($todo, $userToGetShared) !== null)
+        {
+            return null;
+        }
+
+        $todoAccess = new TodoAccess();
+
+        $todoAccess->setTodo($todo);
+        $todoAccess->setPrioritization(100);
+        $todoAccess->setAssignee($userToGetShared);
+        $todoAccess->setShared(true);
+
+        $this->getEntityManager()->persist($todoAccess);
+        $this->getEntityManager()->flush();
+
+        return $todoAccess;
+    }
+
+    public function revoke(Todo $todo, User $userToGetRevoked): bool
+    {
+        $todoAccess = $this->getTodoAccessOfTodoForUser($todo, $userToGetRevoked);
+
+        if($todoAccess === null)
+        {
+            return false;
+        }
+
+        $this->getEntityManager()->remove($todoAccess);
+        $this->getEntityManager()->flush();
+
+        return true;
+    }
+
+    public function getTodoAccessOfTodoForUser(Todo $todo, User $user): ?TodoAccess
+    {
+        return $this->createQueryBuilder('ta')
+            ->leftJoin('ta.todo', 't')
             ->leftJoin('ta.assignee', 'u')
             ->where('t.id = :todoId')
             ->andWhere('u.id = :userId')
