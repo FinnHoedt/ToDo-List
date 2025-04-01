@@ -7,12 +7,11 @@ use App\Entity\Todo;
 use App\Entity\User;
 use App\Repository\TodoAccessRepository;
 use Doctrine\Common\Collections\ArrayCollection;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
-class PrioritizationService
+readonly class PrioritizationService
 {
 
-    public function __construct(private readonly TodoAccessRepository $todoAccessRepository)
+    public function __construct(private TodoAccessRepository $todoAccessRepository)
     {
 
     }
@@ -25,38 +24,37 @@ class PrioritizationService
 
         $todoAccesses = $this->todoAccessRepository->getTodoAccessesOfCategory($category);
 
-        if($this->isAlreadyInOrder($todoAccesses, $prioritizationDto, $todoAccess))
+        if($this->isAlreadyInOrder($todoAccesses, $prioritizationDto->position, $todoAccess))
             return $todoAccess->getPrioritization();
 
-        return $this->getInbetweenPrioritization($todoAccesses, $prioritizationDto);
+
+        return $this->getInbetweenPrioritization($todoAccesses, $prioritizationDto->position);
     }
 
     // geht platz verloren, weil normalisierung vor veränderung gemacht wird
-    private function getInbetweenPrioritization(ArrayCollection $todoAccesses, PrioritizationDto $prioritizationDto): int
+    private function getInbetweenPrioritization(ArrayCollection $todoAccesses, int $position): int
     {
-        $beforeId = $prioritizationDto->beforeId;
-        $afterId = $prioritizationDto->afterId;
+        $count = $todoAccesses->count();
+
+        $position = max(0, min($position, $count - 1));
 
         $beforeTodoAccess = null;
         $afterTodoAccess = null;
 
-        foreach ($todoAccesses as $index => $todoAccess) {
-            if($beforeId !== null && $todoAccess->getTodoId() === $beforeId) {
-                $beforeTodoAccess = $todoAccess;
-                $afterTodoAccess = $todoAccesses[$index + 1] ?? null;
-                break;
-            } elseif ($afterId !== null && $todoAccess->getTodoId() === $afterId) {
-                $afterTodoAccess = $todoAccess;
-                $beforeTodoAccess = $todoAccesses[$index - 1] ?? null;
-                break;
-            }
+        if($position === 0) {
+            $afterTodoAccess = $todoAccesses[$position];
+        } elseif ($position === $count - 1) {
+            $beforeTodoAccess = $todoAccesses[$position];
+        } else {
+            $beforeTodoAccess = $todoAccesses[$position - 1];
+            $afterTodoAccess = $todoAccesses[$position];
         }
 
         if($beforeTodoAccess !== null && $afterTodoAccess !== null) {
 
             if($this->checkForNormalization($beforeTodoAccess->getPrioritization(), $afterTodoAccess->getPrioritization())) {
                 $this->todoAccessRepository->normalizePriorities($todoAccesses);
-                return $this->getInbetweenPrioritization($todoAccesses, $prioritizationDto);
+                return $this->getInbetweenPrioritization($todoAccesses, $position);
             }
 
             return (int) ceil(($beforeTodoAccess->getPrioritization() + $afterTodoAccess->getPrioritization()) / 2);
@@ -67,15 +65,13 @@ class PrioritizationService
 
             if($this->checkForNormalization(0, $afterTodoAccess->getPrioritization())) {
                 $this->todoAccessRepository->normalizePriorities($todoAccesses);
-                return $this->getInbetweenPrioritization($todoAccesses, $prioritizationDto);
+                return $this->getInbetweenPrioritization($todoAccesses, $position);
             }
 
             return (int) ceil($afterTodoAccess->getPrioritization() / 2);
         }
 
-        throw new UnprocessableEntityHttpException(
-            'The provided ToDo item cannot be processed because it is not in the same category.'
-        );
+        throw new \LogicException('This should never happen!');
     }
 
     private function checkForNormalization($beforeTodoAccessPriority, $afterTodoAccessPriority): bool {
@@ -86,23 +82,13 @@ class PrioritizationService
         return false;
     }
 
-    private function isAlreadyInOrder(ArrayCollection $todoAccesses, PrioritizationDto $prioritizationDto, $todoAccess): bool
+    private function isAlreadyInOrder(ArrayCollection $todoAccesses, $position, $todoAccess): bool
     {
-        $beforeId = $prioritizationDto->beforeId;
-        $afterId = $prioritizationDto->afterId;
+        $count = $todoAccesses->count();
 
-        foreach ($todoAccesses as $index => $currentTodoAccess) {
+        $position = max(0, min($position, $count));
 
-            if ($currentTodoAccess->getId() === $beforeId) {
-                return isset($todoAccesses[$index + 1]) && $todoAccesses[$index + 1]->getId() === $todoAccess->getId();
-            }
-
-            if ($currentTodoAccess->getId() === $afterId) {
-                return isset($todoAccesses[$index - 1]) && $todoAccesses[$index - 1]->getId() === $todoAccess->getId();
-            }
-        }
-
-        return false;
+        return isset($todoAccesses[$position]) && $todoAccesses[$position]->getId() === $todoAccess->getId();
     }
 
 

@@ -4,6 +4,7 @@ namespace App\DataFixtures;
 
 use App\Entity\Category;
 use App\Entity\Todo;
+use App\Entity\TodoAccess;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
@@ -17,41 +18,88 @@ class AppFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
-        //TestUser
+        $users = $this->createUsers($manager, 2);
+
+        $categories = [
+            $this->createCategories($manager, $users[0], 2),
+            $this->createCategories($manager, $users[1], 2),
+        ];
+
+        foreach ($users as $index => $user) {
+            $this->createTodosWithCategories($manager, $user, $categories[$index]);
+        }
+
+        foreach ($users as $user) {
+            $this->createTodosWithoutCategories($manager, $user, 2);
+        }
+
+        $manager->flush();
+    }
+
+    private function createUsers(ObjectManager $manager, int $count): array
+    {
         $users = [];
-        for ($i = 0; $i < 2; $i++) {
+
+        for ($i = 0; $i < $count; $i++) {
             $user = new User();
             $user->setEmail("test{$i}@test.com");
-            $password = $this->hasher->hashPassword($user, 'password');
-            $user->setPassword($password);
-            $manager->persist($user);
+            $user->setPassword($this->hasher->hashPassword($user, 'password'));
 
+            $manager->persist($user);
             $users[] = $user;
         }
 
-        //Category
-        for ($i = 0; $i < 6; $i++) {
-            $category = new Category();
-            $category->setTitle('Category ' . $i);
+        return $users;
+    }
 
-            $category->setUser($users[$i % count($users)]);
+    private function createCategories(ObjectManager $manager, User $user, int $count): array
+    {
+        $categories = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            $category = new Category();
+            $category->setTitle("Category {$i} for User {$user->getId()}");
+            $category->setUser($user);
 
             $manager->persist($category);
+            $categories[] = $category;
         }
 
-        $category = new Category();
-        $category->setTitle('Category 1');
-        $category->setUser($users[0]);
+        return $categories;
+    }
 
-        $manager->persist($category);
+    private function createTodosWithCategories(ObjectManager $manager, User $user, array $categories): void
+    {
+        foreach ($categories as $index => $category) {
+            $todo = new Todo();
+            $todo->setTitle("Todo {$index} for Category {$category->getId()}");
+            $todo->setDescription("Test Description");
 
-        $todo = new Todo();
-        $todo->setTitle('Hello');
-        $todo->setDescription('This is a long text');
-        $todo->setCategory($category);
+            $todoAccess = new TodoAccess();
+            $todoAccess->setTodo($todo);
+            $todoAccess->setCategory($category);
+            $todoAccess->setAssignee($user);
+            $todoAccess->setPrioritization(($index + 1) * 1000);
 
-        $manager->persist($todo);
+            $manager->persist($todo);
+            $manager->persist($todoAccess);
+        }
+    }
 
-        $manager->flush();
+    private function createTodosWithoutCategories(ObjectManager $manager, User $user, int $count): void
+    {
+        for ($i = 0; $i < $count; $i++) {
+            $todo = new Todo();
+            $todo->setTitle("Todo {$i} without Category");
+            $todo->setDescription("Test Description");
+
+            $todoAccess = new TodoAccess();
+            $todoAccess->setTodo($todo);
+            $todoAccess->setAssignee($user);
+            $todoAccess->setPrioritization(($i + 1) * 1000);
+
+            $manager->persist($todo);
+            $manager->persist($todoAccess);
+        }
     }
 }

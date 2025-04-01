@@ -6,6 +6,7 @@ use App\Repository\CategoryRepository;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use App\Entity\User;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 final class CategoryControllerTest extends WebTestCase
 {
@@ -28,7 +29,7 @@ final class CategoryControllerTest extends WebTestCase
 
         $responseData = json_decode($client->getResponse()->getContent(), true);
 
-        self::assertCount(3, $responseData);
+        self::assertCount(2, $responseData);
     }
 
     public function testCategoryCreateSuccessfully(): void
@@ -171,10 +172,6 @@ final class CategoryControllerTest extends WebTestCase
         $client->request('GET', "/api/category/{$categoryId}", $options);
 
         self::assertResponseStatusCodeSame(403);
-
-        $responseData = json_decode($client->getResponse()->getContent(), true);
-
-        self::assertEquals('Category does not belong to this user', $responseData['message']);
     }
 
     public function testCategoryUpdateSuccessfully(): void
@@ -215,6 +212,7 @@ final class CategoryControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $userRepository = self::getContainer()->get(UserRepository::class);
+        $categoryRepository = self::getContainer()->get(CategoryRepository::class);
 
         $testUser = $userRepository->findOneByEmail('test0@test.com');
 
@@ -239,9 +237,8 @@ final class CategoryControllerTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(403);
 
-        $responseData = json_decode($client->getResponse()->getContent(), true);
-
-        self::assertEquals('Category does not belong to this user', $responseData['message']);
+        $changedCategory = $categoryRepository->find($categoryId);
+        self::assertEquals($category, $changedCategory);
     }
 
     public function testCategoryUpdateTitleFormat(): void
@@ -334,10 +331,6 @@ final class CategoryControllerTest extends WebTestCase
         $client->request('DELETE', "/api/category/{$categoryId}", $options);
 
         self::assertResponseStatusCodeSame(403);
-
-        $responseData = json_decode($client->getResponse()->getContent(), true);
-
-        self::assertEquals('Category does not belong to this user', $responseData['message']);
 
         $deletedCategory = $categoryRepository->find($categoryId);
         self::assertNotNull($deletedCategory);

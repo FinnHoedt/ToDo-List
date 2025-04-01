@@ -91,7 +91,7 @@ final class TodoController extends AbstractController
         ], Response::HTTP_OK, [], ['groups' => ['todo:read', 'todoAccess:read']]);
     }
 
-    #[Route('/api/todo', name: 'app_todo_store_without_category', methods: ['POST'])]
+    #[Route('/api/todo/category', name: 'app_todo_store_without_category', methods: ['POST'])]
     public function storeWithoutCategory(
         #[CurrentUser] User $user,
         Request $request,
