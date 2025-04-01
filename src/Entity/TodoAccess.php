@@ -36,7 +36,6 @@ class TodoAccess
     #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     private ?Category $category = null;
 
-
     public function getId(): ?int
     {
         return $this->id;

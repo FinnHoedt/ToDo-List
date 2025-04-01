@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Dto\PrioritizationDto;
 use App\Dto\TodoDto;
 use App\Entity\Category;
 use App\Entity\Todo;
@@ -11,13 +12,14 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use phpDocumentor\Reflection\Types\Collection;
+use function Sodium\add;
 
 /**
  * @extends ServiceEntityRepository<Todo>
  */
 class TodoRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry, private EntityManagerInterface $entityManager)
+    public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Todo::class);
     }
@@ -52,30 +54,39 @@ class TodoRepository extends ServiceEntityRepository
         $this->getEntityManager()->flush();
     }
 
-    public function getTodosOfUser(User $user): ArrayCollection
+    public function getTodosOfUser(User $user): array
     {
-        return new ArrayCollection($this->createQueryBuilder('t')
-            ->innerJoin('t.todoAccesses', 'ta')
-            ->addSelect('ta')
-            ->where('ta.assignee = :userId')
-            ->setParameter('userId', $user->getId())
-            ->orderBy('ta.prioritization', 'DESC')
-            ->getQuery()
-            ->getResult());
+        $categories = $user->getCategories();
+        $groupedTodos = [
+            'uncategorized' => $this->getTodosOfUserOfSpecificCategory($user, null),
+            'categorized' => [],
+        ];
+
+        foreach ($categories as $category) {
+            $groupedTodos['categorized'][$category->getTitle()] = $this->getTodosOfUserOfSpecificCategory($user, $category);
+        }
+
+        return $groupedTodos;
     }
 
-    public function getTodosOfUserOfSpecificCategory(User $user, Category $category): ArrayCollection
+
+    public function getTodosOfUserOfSpecificCategory(User $user, ?Category $category): ArrayCollection
     {
-        return new ArrayCollection($this->createQueryBuilder('t')
+        $query = $this->createQueryBuilder('t')
             ->innerJoin('t.todoAccesses', 'ta')
             ->addSelect('ta')
             ->where('ta.assignee = :userId')
-            ->andWhere('ta.category = :category')
             ->setParameter('userId', $user->getId())
-            ->setParameter('category', $category->getId())
-            ->orderBy('ta.prioritization', 'DESC')
-            ->getQuery()
-            ->getResult());
+            ->orderBy('ta.prioritization', 'ASC');
+
+        if ($category !== null) {
+            $query->andWhere('ta.category = :category')
+                ->setParameter('category', $category->getId());
+        } else {
+            $query->andWhere('ta.category IS NULL');
+        }
+
+        return new ArrayCollection($query->getQuery()->getResult());
     }
 
     public function toggleCompleted(Todo $todo): Todo

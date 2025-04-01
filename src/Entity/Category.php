@@ -22,7 +22,16 @@ class Category
     private ?string $title = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'category')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     private ?User $user = null;
+
+    #[ORM\OneToMany(targetEntity: TodoAccess::class, mappedBy: 'category')]
+    private Collection $todoAccesses;
+
+    public function __construct()
+    {
+        $this->todoAccesses = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -57,5 +66,10 @@ class Category
         $this->user = $user;
 
         return $this;
+    }
+
+    public function getTodoAccesses(): Collection
+    {
+        return $this->todoAccesses;
     }
 }

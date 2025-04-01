@@ -6,8 +6,11 @@ use App\Entity\Category;
 use App\Entity\Todo;
 use App\Entity\TodoAccess;
 use App\Entity\User;
+use App\Service\PrioritizationService;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * @extends ServiceEntityRepository<TodoAccess>
@@ -24,7 +27,7 @@ class TodoAccessRepository extends ServiceEntityRepository
         $todoAccess = new TodoAccess();
 
         $todoAccess->setTodo($todo);
-        $todoAccess->setPrioritization(100);
+        $todoAccess->setPrioritization($this->getNextPrioritization($category));
         $todoAccess->setAssignee($user);
         $todoAccess->setCategory($category);
 
@@ -80,6 +83,51 @@ class TodoAccessRepository extends ServiceEntityRepository
             ->setParameter('userId', $user->getId())
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    public function getTodoAccessesOfCategory(?Category $category): ArrayCollection
+    {
+        $qb = $this->createQueryBuilder('ta')
+            ->leftJoin('ta.category', 'c')
+            ->orderBy('ta.prioritization', 'ASC');
+
+        if ($category === null) {
+            $qb->where('c.id IS NULL');
+        } else {
+            $qb->where('c.id = :categoryId')
+                ->setParameter('categoryId', $category->getId());
+        }
+
+        return new ArrayCollection($qb->getQuery()->getResult());
+    }
+
+    public function prioritizeTodo(Todo $todo, User $user, int $newPriority): TodoAccess
+    {
+        $todoAccess = $this->getTodoAccessOfTodoForUser($todo, $user);
+
+        $todoAccess->setPrioritization($newPriority);
+        $this->getEntityManager()->flush();
+
+        return $todoAccess;
+    }
+
+    public function normalizePriorities(ArrayCollection $todoAccesses): void
+    {
+        $step = 1000;
+        $priority = $step;
+
+        foreach($todoAccesses as $todoAccess) {
+            $todoAccess->setPrioritization($priority);
+            $priority += $step;
+        }
+        $this->getEntityManager()->flush();
+    }
+
+    private function getNextPrioritization(?Category $category): int
+    {
+        $todoAccesses = $this->getTodoAccessesOfCategory($category);
+
+        return $todoAccesses->last()->getPrioritization() + 1000;
     }
 
     //    /**
