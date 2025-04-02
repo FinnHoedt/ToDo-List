@@ -54,23 +54,33 @@ class TodoRepository extends ServiceEntityRepository
         $this->getEntityManager()->flush();
     }
 
-    public function getTodosOfUser(User $user): array
+    public function getTodosOfUserWithCategories(User $user): array
     {
         $categories = $user->getCategories();
         $groupedTodos = [
-            'uncategorized' => $this->getTodosOfUserOfSpecificCategory($user, null),
+            'uncategorized' => $this->getTodosOfUserForCategory($user, null),
             'categorized' => [],
         ];
 
         foreach ($categories as $category) {
-            $groupedTodos['categorized'][$category->getTitle()] = $this->getTodosOfUserOfSpecificCategory($user, $category);
+            $groupedTodos['categorized'][$category->getTitle()] = $this->getTodosOfUserForCategory($user, $category);
         }
 
         return $groupedTodos;
     }
 
+    public function getTodosOfUser(User $user): ArrayCollection
+    {
+        return new ArrayCollection($this->createQueryBuilder('t')
+            ->innerJoin('t.todoAccesses', 'ta')
+            ->where('ta.assignee = :userId')
+            ->setParameter('userId', $user->getId())
+            ->getQuery()
+            ->getResult());
+    }
 
-    public function getTodosOfUserOfSpecificCategory(User $user, ?Category $category): ArrayCollection
+
+    public function getTodosOfUserForCategory(User $user, ?Category $category): ArrayCollection
     {
         $query = $this->createQueryBuilder('t')
             ->innerJoin('t.todoAccesses', 'ta')

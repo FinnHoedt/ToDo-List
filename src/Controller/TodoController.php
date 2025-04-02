@@ -24,7 +24,7 @@ final class TodoController extends AbstractController
     #[Route('/api/todo', name: 'app_todo_index', methods: ['GET'])]
     public function index(#[CurrentUser] User $user, TodoRepository $todoRepository): JsonResponse
     {
-        $todos = $todoRepository->getTodosOfUser($user);
+        $todos = $todoRepository->getTodosOfUserWithCategories($user);
 
         return $this->json($todos, Response::HTTP_OK, [], ['groups' => ['todo:read', 'todoAccess:read']]);
     }
@@ -39,7 +39,7 @@ final class TodoController extends AbstractController
         #[MapEntity(mapping: ['category_id' => 'id'])] Category $category,
         TodoRepository $todoRepository): JsonResponse
     {
-        $todos = $todoRepository->getTodosOfUserOfSpecificCategory($user, $category);
+        $todos = $todoRepository->getTodosOfUserForCategory($user, $category);
 
         return $this->json($todos, Response::HTTP_OK, [], ['groups' => ['todo:read', 'todoAccess:read']]);
     }
@@ -52,7 +52,7 @@ final class TodoController extends AbstractController
         #[CurrentUser] User $user,
         TodoRepository $todoRepository): JsonResponse
     {
-        $todos = $todoRepository->getTodosOfUserOfSpecificCategory($user, null);
+        $todos = $todoRepository->getTodosOfUserForCategory($user, null);
 
         return $this->json($todos, Response::HTTP_OK, [], ['groups' => ['todo:read', 'todoAccess:read']]);
     }
@@ -172,7 +172,7 @@ final class TodoController extends AbstractController
         return new JsonResponse(['message' => 'Todo deleted'], Response::HTTP_OK);
     }
 
-    #[Route('/api/todo/{todo_id}/completed',
+    #[Route('/api/todo/{todo_id}/complete',
         name: 'app_todo_completed',
         requirements: ['todo_id' => '\d+'],
         methods: ['PATCH'])]

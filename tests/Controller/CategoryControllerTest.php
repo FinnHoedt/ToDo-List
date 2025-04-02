@@ -29,7 +29,9 @@ final class CategoryControllerTest extends WebTestCase
 
         $responseData = json_decode($client->getResponse()->getContent(), true);
 
-        self::assertCount(2, $responseData);
+        $categories = $testUser->getCategories();
+
+        self::assertCount($categories->count(), $responseData);
     }
 
     public function testCategoryCreateSuccessfully(): void

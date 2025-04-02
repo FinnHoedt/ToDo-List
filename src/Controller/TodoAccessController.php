@@ -53,10 +53,10 @@ final class TodoAccessController extends AbstractController
         ], Response::HTTP_OK, [], ['groups' => ['todo:read', 'todoAccess:read']]);
     }
 
-    #[Route('/api/todo/{todo_id}/revoke/{user_id}',
+    #[Route('/api/todo/{todo_id}/share/{user_id}',
         name: 'app_todo_revoke',
         requirements: ['todo_id' => '\d+', 'user_id' => '\d+'],
-        methods: ['POST'])]
+        methods: ['DELETE'])]
     #[IsGranted('TODO_OWNER', 'todo')]
     public function revokeTodo(
         #[CurrentUser] User $user,
@@ -83,7 +83,7 @@ final class TodoAccessController extends AbstractController
         ], Response::HTTP_OK, [], ['groups' => ['todo:read', 'todoAccess:read']]);
     }
 
-    #[Route('/api/todo/{todo_id}/prioritize', name: 'app_todo_prioritize', methods: ['POST'])]
+    #[Route('/api/todo/{todo_id}/prioritize', name: 'app_todo_prioritize', methods: ['PATCH'])]
     #[IsGranted('TODO_ACCESS', 'todo')]
     public function prioritizeTodo(
         #[CurrentUser] User $user,

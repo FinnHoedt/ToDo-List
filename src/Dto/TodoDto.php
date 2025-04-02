@@ -19,7 +19,6 @@ class TodoDto
         #[Assert\Type("string", message: "Title has to be a valid string")]
         public mixed $title,
 
-        #[Assert\Type("string")]
         #[Assert\Type("string", message: "Description has to be a valid string")]
         public mixed $description,
     )

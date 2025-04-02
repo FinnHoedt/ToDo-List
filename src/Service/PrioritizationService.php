@@ -86,7 +86,7 @@ readonly class PrioritizationService
     {
         $count = $todoAccesses->count();
 
-        $position = max(0, min($position, $count));
+        $position = max(0, min($position, $count - 1));
 
         return isset($todoAccesses[$position]) && $todoAccesses[$position]->getId() === $todoAccess->getId();
     }

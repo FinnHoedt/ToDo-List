@@ -32,7 +32,6 @@ final class TodoVoter extends Voter
     {
         $user = $token->getUser();
 
-        // if the user is anonymous, do not grant access
         if (!$user instanceof User) {
             return false;
         }
@@ -49,6 +48,9 @@ final class TodoVoter extends Voter
     private function ensureUserIsOwner(Todo $todo, User $user): bool
     {
         $todoAccess = $this->todoAccessRepository->getTodoAccessOfTodoForUser($todo, $user);
+
+        if($todoAccess === null)
+            return false;
 
         if($todoAccess->isShared())
             return false;

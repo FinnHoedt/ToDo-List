@@ -20,18 +20,26 @@ class AppFixtures extends Fixture
     {
         $users = $this->createUsers($manager, 2);
 
+        $manager->flush();
+
         $categories = [
-            $this->createCategories($manager, $users[0], 2),
+            $this->createCategories($manager, $users[0], 1),
             $this->createCategories($manager, $users[1], 2),
         ];
+
+        $manager->flush();
 
         foreach ($users as $index => $user) {
             $this->createTodosWithCategories($manager, $user, $categories[$index]);
         }
 
+        $manager->flush();
+
         foreach ($users as $user) {
             $this->createTodosWithoutCategories($manager, $user, 2);
         }
+
+        $this->createSharedTodo($manager, $users[0], $users[1]);
 
         $manager->flush();
     }
@@ -71,18 +79,20 @@ class AppFixtures extends Fixture
     private function createTodosWithCategories(ObjectManager $manager, User $user, array $categories): void
     {
         foreach ($categories as $index => $category) {
-            $todo = new Todo();
-            $todo->setTitle("Todo {$index} for Category {$category->getId()}");
-            $todo->setDescription("Test Description");
+            for ($i = 0; $i < 2; $i++) {
+                $todo = new Todo();
+                $todo->setTitle("Todo {$i} for Category {$category->getId()}");
+                $todo->setDescription("Test Description");
 
-            $todoAccess = new TodoAccess();
-            $todoAccess->setTodo($todo);
-            $todoAccess->setCategory($category);
-            $todoAccess->setAssignee($user);
-            $todoAccess->setPrioritization(($index + 1) * 1000);
+                $todoAccess = new TodoAccess();
+                $todoAccess->setTodo($todo);
+                $todoAccess->setCategory($category);
+                $todoAccess->setAssignee($user);
+                $todoAccess->setPrioritization(($i + 1) * 1000);
 
-            $manager->persist($todo);
-            $manager->persist($todoAccess);
+                $manager->persist($todo);
+                $manager->persist($todoAccess);
+            }
         }
     }
 
@@ -101,5 +111,27 @@ class AppFixtures extends Fixture
             $manager->persist($todo);
             $manager->persist($todoAccess);
         }
+    }
+
+    private function createSharedTodo(ObjectManager $manager, User $owner, User $sharedUser): void
+    {
+        $todo = new Todo();
+        $todo->setTitle("Shared");
+        $todo->setDescription("This is a shared task.");
+
+        $ownerAccess = new TodoAccess();
+        $ownerAccess->setTodo($todo);
+        $ownerAccess->setAssignee($owner);
+        $ownerAccess->setPrioritization(1000);
+
+        $sharedAccess = new TodoAccess();
+        $sharedAccess->setTodo($todo);
+        $sharedAccess->setAssignee($sharedUser);
+        $sharedAccess->setShared(true);
+        $sharedAccess->setPrioritization(1000);
+
+        $manager->persist($todo);
+        $manager->persist($ownerAccess);
+        $manager->persist($sharedAccess);
     }
 }
