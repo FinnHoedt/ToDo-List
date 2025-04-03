@@ -24,15 +24,17 @@ readonly class PrioritizationService
 
         $todoAccesses = $this->todoAccessRepository->getTodoAccessesOfCategory($category);
 
-        if($this->isAlreadyInOrder($todoAccesses, $prioritizationDto->position, $todoAccess))
+        $position = $prioritizationDto->position;
+        $currentPosition = $todoAccesses->indexOf($todoAccess);
+
+        if($position === $currentPosition)
             return $todoAccess->getPrioritization();
 
-
-        return $this->getInbetweenPrioritization($todoAccesses, $prioritizationDto->position);
+        return $this->getInbetweenPrioritization($todoAccesses, $position, $currentPosition);
     }
 
     // geht platz verloren, weil normalisierung vor veränderung gemacht wird
-    private function getInbetweenPrioritization(ArrayCollection $todoAccesses, int $position): int
+    private function getInbetweenPrioritization(ArrayCollection $todoAccesses, int $position, int $currentPosition): int
     {
         $count = $todoAccesses->count();
 
@@ -46,15 +48,20 @@ readonly class PrioritizationService
         } elseif ($position === $count - 1) {
             $beforeTodoAccess = $todoAccesses[$position];
         } else {
-            $beforeTodoAccess = $todoAccesses[$position - 1];
-            $afterTodoAccess = $todoAccesses[$position];
+            if ($currentPosition < $position) {
+                $beforeTodoAccess = $todoAccesses[$position];
+                $afterTodoAccess = $todoAccesses[$position + 1];
+            } elseif ($currentPosition > $position) {
+                $beforeTodoAccess = $todoAccesses[$position - 1];
+                $afterTodoAccess = $todoAccesses[$position];
+            }
         }
 
         if($beforeTodoAccess !== null && $afterTodoAccess !== null) {
 
             if($this->checkForNormalization($beforeTodoAccess->getPrioritization(), $afterTodoAccess->getPrioritization())) {
                 $this->todoAccessRepository->normalizePriorities($todoAccesses);
-                return $this->getInbetweenPrioritization($todoAccesses, $position);
+                return $this->getInbetweenPrioritization($todoAccesses, $position, $currentPosition);
             }
 
             return (int) ceil(($beforeTodoAccess->getPrioritization() + $afterTodoAccess->getPrioritization()) / 2);
@@ -65,7 +72,7 @@ readonly class PrioritizationService
 
             if($this->checkForNormalization(0, $afterTodoAccess->getPrioritization())) {
                 $this->todoAccessRepository->normalizePriorities($todoAccesses);
-                return $this->getInbetweenPrioritization($todoAccesses, $position);
+                return $this->getInbetweenPrioritization($todoAccesses, $position, $currentPosition);
             }
 
             return (int) ceil($afterTodoAccess->getPrioritization() / 2);
@@ -81,15 +88,4 @@ readonly class PrioritizationService
         }
         return false;
     }
-
-    private function isAlreadyInOrder(ArrayCollection $todoAccesses, $position, $todoAccess): bool
-    {
-        $count = $todoAccesses->count();
-
-        $position = max(0, min($position, $count - 1));
-
-        return isset($todoAccesses[$position]) && $todoAccesses[$position]->getId() === $todoAccess->getId();
-    }
-
-
 }

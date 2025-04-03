@@ -11,6 +11,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use function PHPUnit\Framework\isEmpty;
 
 /**
  * @extends ServiceEntityRepository<TodoAccess>
@@ -126,6 +127,9 @@ class TodoAccessRepository extends ServiceEntityRepository
     private function getNextPrioritization(?Category $category): int
     {
         $todoAccesses = $this->getTodoAccessesOfCategory($category);
+
+        if($todoAccesses->isEmpty())
+            return 1000;
 
         return $todoAccesses->last()->getPrioritization() + 1000;
     }
