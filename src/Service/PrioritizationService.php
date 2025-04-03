@@ -22,7 +22,9 @@ readonly class PrioritizationService
 
         $category = $todoAccess->getCategory();
 
-        $todoAccesses = $this->todoAccessRepository->getTodoAccessesOfCategory($category);
+        $todoAccesses = $category === null
+            ? $this->todoAccessRepository->getUncategorizedTodoAccessesOfUser($user)
+            : $this->todoAccessRepository->getTodoAccessesOfCategory($category);
 
         $position = $prioritizationDto->position;
         $currentPosition = $todoAccesses->indexOf($todoAccess);

@@ -28,7 +28,7 @@ class TodoAccessRepository extends ServiceEntityRepository
         $todoAccess = new TodoAccess();
 
         $todoAccess->setTodo($todo);
-        $todoAccess->setPrioritization($this->getNextPrioritization($category));
+        $todoAccess->setPrioritization($this->getNextPrioritization($user, $category));
         $todoAccess->setAssignee($user);
         $todoAccess->setCategory($category);
 
@@ -48,7 +48,7 @@ class TodoAccessRepository extends ServiceEntityRepository
         $todoAccess = new TodoAccess();
 
         $todoAccess->setTodo($todo);
-        $todoAccess->setPrioritization(100);
+        $todoAccess->setPrioritization($this->getNextPrioritization($userToGetShared, null));
         $todoAccess->setAssignee($userToGetShared);
         $todoAccess->setShared(true);
 
@@ -86,20 +86,31 @@ class TodoAccessRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
-    public function getTodoAccessesOfCategory(?Category $category): ArrayCollection
+    public function getTodoAccessesOfCategory(Category $category): ArrayCollection
     {
-        $qb = $this->createQueryBuilder('ta')
-            ->leftJoin('ta.category', 'c')
-            ->orderBy('ta.prioritization', 'ASC');
+        return new ArrayCollection(
+            $this->createQueryBuilder('ta')
+                ->leftJoin('ta.category', 'c')
+                ->where('c.id = :categoryId')
+                ->setParameter('categoryId', $category->getId())
+                ->orderBy('ta.prioritization', 'ASC')
+                ->getQuery()
+                ->getResult()
+        );
+    }
 
-        if ($category === null) {
-            $qb->where('c.id IS NULL');
-        } else {
-            $qb->where('c.id = :categoryId')
-                ->setParameter('categoryId', $category->getId());
-        }
-
-        return new ArrayCollection($qb->getQuery()->getResult());
+    public function getUncategorizedTodoAccessesOfUser(User $user): ArrayCollection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('ta')
+                ->leftJoin('ta.category', 'c')
+                ->where('c.id IS NULL')
+                ->andWhere('ta.assignee = :userId')
+                ->setParameter('userId', $user->getId())
+                ->orderBy('ta.prioritization', 'ASC')
+                ->getQuery()
+                ->getResult()
+        );
     }
 
     public function prioritizeTodo(Todo $todo, User $user, int $newPriority): TodoAccess
@@ -124,9 +135,11 @@ class TodoAccessRepository extends ServiceEntityRepository
         $this->getEntityManager()->flush();
     }
 
-    private function getNextPrioritization(?Category $category): int
+    private function getNextPrioritization(User $user, ?Category $category): int
     {
-        $todoAccesses = $this->getTodoAccessesOfCategory($category);
+        $todoAccesses = $category === null
+            ? $this->getUncategorizedTodoAccessesOfUser($user)
+            : $this->getTodoAccessesOfCategory($category);
 
         if($todoAccesses->isEmpty())
             return 1000;
